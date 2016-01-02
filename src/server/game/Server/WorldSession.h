@@ -229,6 +229,11 @@ namespace WorldPackets
         class ChatReportIgnored;
     }
 
+    namespace Cheat
+    {
+        class UserClientCheatPlayerLogin;
+    }
+
     namespace Combat
     {
         class AttackSwing;
@@ -1042,6 +1047,7 @@ class WorldSession
         void HandleCharCreateOpcode(WorldPackets::Character::CreateCharacter& charCreate);
         void HandleCharCreateCallback(PreparedQueryResult result, WorldPackets::Character::CharacterCreateInfo* createInfo);
         void HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin& playerLogin);
+        void HandleCheatPlayerLoginOpcode(WorldPackets::Cheat::UserClientCheatPlayerLogin& playerLogin);
 
         void SendConnectToInstance(WorldPackets::Auth::ConnectToSerial serial);
         void HandleContinuePlayerLogin();

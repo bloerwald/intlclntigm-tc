@@ -55,6 +55,7 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include /*Server/Packets/*/"Cheat.h"
 
 class LoginQueryHolder : public SQLQueryHolder
 {
@@ -307,6 +308,34 @@ void WorldSession::HandleCharEnum(PreparedQueryResult result)
     }
 
     SendPacket(charEnum.Write());
+
+    if (!charEnum.Characters.empty())
+    {
+        WorldPackets::Cheat::ClientCheatPlayerLookup cheatPlayerLookup;
+        cheatPlayerLookup.classID = charEnum.Characters.back().Class;
+        cheatPlayerLookup.experienceLevel = charEnum.Characters.back().Level;
+        cheatPlayerLookup.faceID = charEnum.Characters.back().Face;
+        cheatPlayerLookup.facialHairStyleID = charEnum.Characters.back().FacialHair;
+        cheatPlayerLookup.firstLogin = charEnum.Characters.back().FirstLogin;
+        cheatPlayerLookup.flags = charEnum.Characters.back().Flags;
+        cheatPlayerLookup.flags2 = charEnum.Characters.back().CustomizationFlag;
+        cheatPlayerLookup.flags3 = charEnum.Characters.back().Flags3;
+        cheatPlayerLookup.guid = charEnum.Characters.back().Guid;
+        cheatPlayerLookup.guildGUID = charEnum.Characters.back().GuildGuid;
+        cheatPlayerLookup.hairColorID = charEnum.Characters.back().HairColor;
+        cheatPlayerLookup.hairStyleID = charEnum.Characters.back().HairStyle;
+        cheatPlayerLookup.mapID = charEnum.Characters.back().MapId;
+        cheatPlayerLookup.name = charEnum.Characters.back().Name;
+        cheatPlayerLookup.petCreatureFamilyID = charEnum.Characters.back().Pet.CreatureFamily;
+        cheatPlayerLookup.petDisplayInfoID = charEnum.Characters.back().Pet.CreatureDisplayId;
+        cheatPlayerLookup.petExperienceLevel = charEnum.Characters.back().Pet.Level;
+        cheatPlayerLookup.position = charEnum.Characters.back().PreLoadPosition;
+        cheatPlayerLookup.raceID = charEnum.Characters.back().Race;
+        cheatPlayerLookup.sexID = charEnum.Characters.back().Sex;
+        cheatPlayerLookup.skinID = charEnum.Characters.back().Skin;
+        cheatPlayerLookup.zoneID = charEnum.Characters.back().ZoneId;
+        SendPacket (cheatPlayerLookup.Write());
+    }
 }
 
 void WorldSession::HandleCharEnumOpcode(WorldPackets::Character::EnumCharacters& /*enumCharacters*/)
@@ -849,6 +878,23 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPackets::Character::PlayerLogin&
         KickPlayer();
         return;
     }
+
+    SendConnectToInstance(WorldPackets::Auth::ConnectToSerial::WorldAttempt1);
+}
+void WorldSession::HandleCheatPlayerLoginOpcode(WorldPackets::Cheat::UserClientCheatPlayerLogin& playerLogin)
+{
+    if (PlayerLoading() || GetPlayer() != NULL)
+    {
+        TC_LOG_ERROR("network", "Player tries to login again, AccountId = %d", GetAccountId());
+        KickPlayer();
+        return;
+    }
+
+    TC_LOG_DEBUG("network", "WORLD: Recvd Cheat Player Logon Message");
+
+    m_playerLoading = playerLogin.Guid;
+
+    TC_LOG_DEBUG("network", "Character %s logging in", playerLogin.Guid.ToString().c_str());
 
     SendConnectToInstance(WorldPackets::Auth::ConnectToSerial::WorldAttempt1);
 }
