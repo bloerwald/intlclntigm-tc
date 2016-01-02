@@ -28,6 +28,7 @@ WorldPacket const* WorldPackets::EquipmentSet::EquipmentSetID::Write()
 WorldPacket const* WorldPackets::EquipmentSet::LoadEquipmentSet::Write()
 {
     _worldPacket.WriteBits(0/*SetData.size()*/, 19);
+    _worldPacket.FlushBits();
 
     return &_worldPacket;
 }

@@ -73,12 +73,13 @@ WorldPacket const* WorldPackets::System::MOTD::Write()
 {
     ASSERT(Text);
     _worldPacket.WriteBits(Text->size(), 4);
-    _worldPacket.FlushBits();
 
     for (std::string const& line : *Text)
     {
         _worldPacket.WriteBits(line.length(), 7);
-        _worldPacket.FlushBits();
+    }
+    for (std::string const& line : *Text)
+    {
         _worldPacket.WriteString(line);
     }
 

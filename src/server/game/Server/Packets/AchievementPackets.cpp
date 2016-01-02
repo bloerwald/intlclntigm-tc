@@ -29,15 +29,14 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Achievement::EarnedAchiev
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Achievement::AllAchievements const& allAchievements)
 {
-    data.WriteBits (0, 19);
-    data.WriteBits (0, 20);
-
     return data;
 }
 
 WorldPacket const* WorldPackets::Achievement::AllAchievementData::Write()
 {
-    _worldPacket << Data;
+    _worldPacket.WriteBits (0, 19);
+    _worldPacket.WriteBits (0, 20);
+    _worldPacket.FlushBits();
 
     return &_worldPacket;
 }

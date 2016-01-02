@@ -430,11 +430,10 @@ WorldPacket const* WorldPackets::Character::LoginVerifyWorld::Write()
     _worldPacket << float(Pos.GetPositionZ());
     _worldPacket << int32(MapID);
     _worldPacket << float(Pos.GetPositionY());
-    _worldPacket.WriteBit (!Reason);
-    if (Reason)
-    {
-        _worldPacket << uint32 (Reason);
-    }
+
+    //! \fuck it optional, always
+    _worldPacket.WriteBit (0);
+    _worldPacket << uint32 (Reason);    
 
     return &_worldPacket;
 }
@@ -470,14 +469,14 @@ WorldPacket const* WorldPackets::Character::InitialSetup::Write()
     _worldPacket << uint8(ServerExpansionLevel);
     _worldPacket << int32(ServerRegionID);
     _worldPacket << uint8(ServerExpansionTier);
-    _worldPacket.WriteBits (2500, 24);
-    _worldPacket.WriteBit (RaidOrigin);
-    if (RaidOrigin)
-        _worldPacket << uint32 (RaidOrigin);
-    for (int i = 0; i < 2500; ++i)
+    _worldPacket.WriteBits (1, 24);
+    _worldPacket.WriteBit (!RaidOrigin);
+    for (int i = 0; i < 1; ++i)
     {
         _worldPacket << uint8(0);
     }
+    if (RaidOrigin)
+        _worldPacket << uint32 (RaidOrigin);
 
     return &_worldPacket;
 }

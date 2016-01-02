@@ -52,7 +52,7 @@ WorldPacket const* WorldPackets::Spells::SendKnownSpells::Write()
 
 WorldPacket const* WorldPackets::Spells::UpdateActionButtons::Write()
 {
-    #define flag(x) for (uint32 i = 0; i < MAX_ACTION_BUTTONS; ++i) if ((ActionButtons[i] >> (x * 8)) & 0xff) _worldPacket.WriteBit ((ActionButtons[i] >> (x * 8)) & 0xff)
+    #define flag(x) for (uint32 i = 0; i < MAX_ACTION_BUTTONS; ++i) _worldPacket.WriteBit ((ActionButtons[i] >> (x * 8)) & 0xff)
     #define send(x) for (uint32 i = 0; i < MAX_ACTION_BUTTONS; ++i) if ((ActionButtons[i] >> (x * 8)) & 0xff) _worldPacket << uint8 ((ActionButtons[i] >> (x * 8)) & 0xff ^ 1)
     flag (3);
     flag (4);
@@ -85,6 +85,7 @@ void WorldPackets::Spells::SetActionButton::Read()
 WorldPacket const* WorldPackets::Spells::SendUnlearnSpells::Write()
 {
     _worldPacket.WriteBits (Spells.size(), 22);
+    _worldPacket.FlushBits();
     for (uint32 spellId : Spells)
         _worldPacket << uint32(spellId);
 
@@ -565,6 +566,7 @@ WorldPacket const* WorldPackets::Spells::SendSpellHistory::Write()
     {
         _worldPacket.WriteBit(historyEntry.OnHold);
     }
+    _worldPacket.FlushBits();
     for (SpellHistoryEntry const& historyEntry : Entries)
     {
         _worldPacket << int32(historyEntry.RecoveryTime);
@@ -608,6 +610,7 @@ WorldPacket const* WorldPackets::Spells::SetSpellCharges::Write()
 WorldPacket const* WorldPackets::Spells::SendSpellCharges::Write()
 {
     _worldPacket.WriteBits (Entries.size(), 21);
+    _worldPacket.FlushBits();
     for (SpellChargeEntry const& chargeEntry : Entries)
     {
         _worldPacket << uint32(chargeEntry.Category);
