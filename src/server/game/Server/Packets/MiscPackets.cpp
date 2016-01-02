@@ -195,7 +195,6 @@ void WorldPackets::Misc::SetDungeonDifficulty::Read()
 void WorldPackets::Misc::SetRaidDifficulty::Read()
 {
     _worldPacket >> DifficultyID;
-    _worldPacket >> Legacy;
 }
 
 WorldPacket const* WorldPackets::Misc::DungeonDifficultySet::Write()
@@ -207,7 +206,6 @@ WorldPacket const* WorldPackets::Misc::DungeonDifficultySet::Write()
 WorldPacket const* WorldPackets::Misc::RaidDifficultySet::Write()
 {
     _worldPacket << int32(DifficultyID);
-    _worldPacket << uint8(Legacy);
     return &_worldPacket;
 }
 
