@@ -74,18 +74,18 @@ char** cli_completion(const char* text, int start, int /*end*/)
     char** matches = NULL;
 
     if (start)
-        rl_bind_key('\t', rl_abort);
+    ;//    rl_bind_key('\t', rl_abort);
     else
         matches = rl_completion_matches((char*)text, &command_finder);
     return matches;
 }
 
-int cli_hook_func()
+/*int cli_hook_func()
 {
        if (World::IsStopped())
            rl_done = 1;
        return 0;
-}
+}*/
 
 #endif
 
@@ -136,7 +136,7 @@ void CliThread()
     //TC_LOG_INFO("server.worldserver", "");
 #if PLATFORM != PLATFORM_WINDOWS
     rl_attempted_completion_function = cli_completion;
-    rl_event_hook = cli_hook_func;
+    //rl_event_hook = cli_hook_func;
 #endif
 
     if (sConfigMgr->GetBoolDefault("BeepAtStart", true))
