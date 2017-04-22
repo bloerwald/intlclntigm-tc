@@ -339,7 +339,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
     bool PlayHoverAnim = false;
     bool IsSuppressingGreetings = false;
     bool HasMovementUpdate = (flags & UPDATEFLAG_LIVING) != 0;
-    bool HasMovementTransport = (flags & UPDATEFLAG_TRANSPORT_POSITION) != 0;
+    bool HasPassenger = (flags & UPDATEFLAG_TRANSPORT_POSITION) != 0;
     bool Stationary = (flags & UPDATEFLAG_STATIONARY_POSITION) != 0;
     bool CombatVictim = (flags & UPDATEFLAG_HAS_TARGET) != 0;
     bool ServerTime = (flags & UPDATEFLAG_TRANSPORT) != 0;
@@ -357,250 +357,234 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
         if (go->GetGoType() == GAMEOBJECT_TYPE_TRANSPORT)
             PauseTimesCount = go->GetGOValue()->Transport.StopFrames->size();
 
-    data->WriteBit(NoBirthAnim);
-    data->WriteBit(EnablePortals);
-    data->WriteBit(PlayHoverAnim);
-    data->WriteBit(IsSuppressingGreetings);
-    data->WriteBit(HasMovementUpdate);
-    data->WriteBit(HasMovementTransport);
-    data->WriteBit(Stationary);
-    data->WriteBit(CombatVictim);
+    TC_LOG_ERROR ("network", "BuildMovementUpdate");
+    TC_LOG_DEBUG ("network", "%s:%i", "HasAreaTrigger", HasAreaTrigger);
+    TC_LOG_DEBUG ("network", "%s:%i", "HasGameObject", HasGameObject);
+    TC_LOG_DEBUG ("network", "%s:%i", "ThisIsYou", ThisIsYou);
+    TC_LOG_DEBUG ("network", "%s:%i", "AnimKitCreate", AnimKitCreate);
+    TC_LOG_DEBUG ("network", "%s:%i", "ReplaceActive", ReplaceActive);
+    TC_LOG_DEBUG ("network", "%s:%i", "PlayHoverAnim", PlayHoverAnim);
+    TC_LOG_DEBUG ("network", "%s:%i", "Stationary", Stationary);
+    TC_LOG_DEBUG ("network", "%s:%i", "ScenePendingInstances", ScenePendingInstances);
+
+    TC_LOG_DEBUG ("network", "%s:%i", "HasMovementUpdate", HasMovementUpdate);
+    TC_LOG_DEBUG ("network", "%s:%i", "NoBirthAnim", NoBirthAnim);
+    TC_LOG_DEBUG ("network", "%s:%i", "VehicleCreate", VehicleCreate);
+    TC_LOG_DEBUG ("network", "%s:%i", "PauseTimesCount", PauseTimesCount);
+    TC_LOG_DEBUG ("network", "%s:%i", "EnablePortals", EnablePortals);
+    TC_LOG_DEBUG ("network", "%s:%i", "SceneObjCreate", SceneObjCreate);
+    TC_LOG_DEBUG ("network", "%s:%i", "HasPassenger", HasPassenger);
+    TC_LOG_DEBUG ("network", "%s:%i", "IsSuppressingGreetings", IsSuppressingGreetings);
+    TC_LOG_DEBUG ("network", "%s:%i", "Rotation", Rotation);
+    TC_LOG_DEBUG ("network", "%s:%i", "CombatVictim", CombatVictim);
+    TC_LOG_DEBUG ("network", "%s:%i", "ServerTime", ServerTime);
+
     data->WriteBit(ServerTime);
-    data->WriteBit(VehicleCreate);
-    data->WriteBit(AnimKitCreate);
+    data->WriteBit(CombatVictim);
     data->WriteBit(Rotation);
-    data->WriteBit(HasAreaTrigger);
-    data->WriteBit(HasGameObject);
-    data->WriteBit(ThisIsYou);
-    data->WriteBit(ReplaceActive);
+    data->WriteBit(IsSuppressingGreetings);
+    data->WriteBit(HasPassenger);
     data->WriteBit(SceneObjCreate);
+    data->WriteBit(EnablePortals);
+    data->WriteBit(VehicleCreate);
+
+    data->WriteBit(NoBirthAnim);
+    data->WriteBit(HasMovementUpdate);
     data->WriteBit(ScenePendingInstances);
-    *data << uint32(PauseTimesCount);
+    data->WriteBits(PauseTimesCount, 22);
+    data->WriteBit(Stationary);
+    data->WriteBit(PlayHoverAnim);
+    data->WriteBit(ReplaceActive);
+    data->WriteBit(AnimKitCreate);
+    data->WriteBit(ThisIsYou);
+    data->WriteBit(HasGameObject);
+    data->WriteBit(HasAreaTrigger);
+
+    #define WRITE_GUID_FLAG(var, x) TC_LOG_DEBUG ("network", "%s[%i] f%i", #var, x, !!var[x]); data->WriteBit (!!var[x]);
+    #define WRITE_GUID_BYTE(var, x) if (!!var[x]) { TC_LOG_DEBUG ("network", "%s[%i] %i", #var, x, var[x]);  *data << uint8 (var[x] ^ 1); }
+
+    if (HasPassenger)
+    {
+      WorldObject const* self = static_cast<WorldObject const*>(this);
+
+      data->WriteBit (!!self->m_movementInfo.transport.prevTime);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 3);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 6);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 0);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 7);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 2);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 4);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 5);
+      data->WriteBit (!!self->m_movementInfo.transport.vehicleId);
+      WRITE_GUID_FLAG (self->m_movementInfo.transport.guid, 1);
+    }
 
     if (HasMovementUpdate)
     {
-        Unit const* unit = ToUnit();
-        bool HasFallDirection = unit->HasUnitMovementFlag(MOVEMENTFLAG_FALLING);
-        bool HasFall = HasFallDirection || unit->m_movementInfo.jump.fallTime != 0;
-        bool HasSpline = unit->IsSplineEnabled();
+      Unit const* unit = ToUnit();
+      bool HasFallDirection = unit->HasUnitMovementFlag(MOVEMENTFLAG_FALLING);
+      bool HasFall = HasFallDirection || unit->m_movementInfo.jump.fallTime != 0;
+      bool HasSpline = false; //unit->IsSplineEnabled();
 
-        *data << GetPackGUID();                                         // MoverGUID
+// -        *data << uint32(unit->m_movementInfo.time);                     // MoveIndex
+// -        *data << float(unit->GetPositionX());
+// -        *data << float(unit->GetPositionY());
+// -        *data << float(unit->GetPositionZ());
+// -        *data << float(unit->GetOrientation());
+// -
+// -        *data << uint32(0);                                             // Unknown
+// -
+// -        data->WriteBits(unit->GetUnitMovementFlags(), 30);
+// -        data->WriteBits(unit->GetExtraUnitMovementFlags(), 16);
+// -        data->WriteBit(!unit->m_movementInfo.transport.guid.IsEmpty()); // HasTransport
+// -        data->WriteBit(HasFall);                                        // HasFall
+// -
+// -        if (HasFall)
+// -            *data << uint32(unit->m_movementInfo.jump.fallTime);              // Time
+// -
+// -            if (data->WriteBit(HasFallDirection))
+// -            {
+// -                *data << float(unit->m_movementInfo.jump.sinAngle);           // Direction
+// -                *data << float(unit->m_movementInfo.jump.cosAngle);
+// -                *data << float(unit->m_movementInfo.jump.xyspeed);            // Speed
+// -            }
+// -
+// -        // HasMovementSpline - marks that spline data is present in packet
+// -        if (HasSpline)
+// -            WorldPackets::Movement::CommonMovement::WriteCreateObjectSplineDataBlock(*unit->movespline, *data);
 
-        *data << uint32(unit->m_movementInfo.time);                     // MoveIndex
-        *data << float(unit->GetPositionX());
-        *data << float(unit->GetPositionY());
-        *data << float(unit->GetPositionZ());
-        *data << float(unit->GetOrientation());
+    TC_LOG_ERROR ("network", "BuildMovementUpdate: movement block 1");
+    TC_LOG_DEBUG ("network", "%s:%i", "HasFall", HasFall);
+    TC_LOG_DEBUG ("network", "%s:%i", "HasSpline", HasSpline);
+    TC_LOG_DEBUG ("network", "%s:%s", "GetGUID()", GetGUID().ToString().c_str());
+    TC_LOG_DEBUG ("network", "%s:%i", "unit->GetExtraUnitMovementFlags()", unit->GetExtraUnitMovementFlags());
+    TC_LOG_DEBUG ("network", "%s:%i", "HasFallDirection", HasFallDirection);
+    TC_LOG_DEBUG ("network", "%s:%i", "unit->GetUnitMovementFlags()", unit->GetUnitMovementFlags());
+    TC_LOG_DEBUG ("network", "%s:%s", "unit->m_movementInfo.transport.guid", unit->m_movementInfo.transport.guid.ToString().c_str());
+    TC_LOG_DEBUG ("network", "%s:%i", "!!unit->m_movementInfo.transport.prevTime", !!unit->m_movementInfo.transport.prevTime);
+    TC_LOG_DEBUG ("network", "%s:%i", "!!unit->m_movementInfo.transport.vehicleId", !!unit->m_movementInfo.transport.vehicleId);
 
-        *data << float(unit->m_movementInfo.pitch);                     // Pitch
-        *data << float(unit->m_movementInfo.splineElevation);           // StepUpStartElevation
-
-        uint32 removeMovementForcesCount = 0;
-        *data << uint32(removeMovementForcesCount);                     // Count of RemoveForcesIDs
-        *data << uint32(0);                                             // Unknown
-
-        //for (uint32 i = 0; i < removeMovementForcesCount; ++i)
-        //    *data << ObjectGuid(RemoveForcesIDs);
-
-        data->WriteBits(unit->GetUnitMovementFlags(), 30);
-        data->WriteBits(unit->GetExtraUnitMovementFlags(), 16);
-        data->WriteBit(!unit->m_movementInfo.transport.guid.IsEmpty()); // HasTransport
-        data->WriteBit(HasFall);                                        // HasFall
-        data->WriteBit(HasSpline);                                      // HasSpline - marks that the unit uses spline movement
-        data->WriteBit(0);                                              // HeightChangeFailed
-        data->WriteBit(0);                                              // RemoteTimeValid
-
-        if (!unit->m_movementInfo.transport.guid.IsEmpty())
-            *data << unit->m_movementInfo.transport;
-
-        if (HasFall)
-        {
-            *data << uint32(unit->m_movementInfo.jump.fallTime);              // Time
-            *data << float(unit->m_movementInfo.jump.zspeed);                 // JumpVelocity
-
-            if (data->WriteBit(HasFallDirection))
-            {
-                *data << float(unit->m_movementInfo.jump.sinAngle);           // Direction
-                *data << float(unit->m_movementInfo.jump.cosAngle);
-                *data << float(unit->m_movementInfo.jump.xyspeed);            // Speed
-            }
-        }
-
-        *data << float(unit->GetSpeed(MOVE_WALK));
-        *data << float(unit->GetSpeed(MOVE_RUN));
-        *data << float(unit->GetSpeed(MOVE_RUN_BACK));
-        *data << float(unit->GetSpeed(MOVE_SWIM));
-        *data << float(unit->GetSpeed(MOVE_SWIM_BACK));
-        *data << float(unit->GetSpeed(MOVE_FLIGHT));
-        *data << float(unit->GetSpeed(MOVE_FLIGHT_BACK));
-        *data << float(unit->GetSpeed(MOVE_TURN_RATE));
-        *data << float(unit->GetSpeed(MOVE_PITCH_RATE));
-
-        uint32 MovementForceCount = 0;
-        *data << uint32(MovementForceCount);
-
-        //for (uint32 i = 0; i < MovementForceCount; ++i)
-        //{
-        //    *data << ObjectGuid(ID);
-        //    *data << Vector3(Direction);
-        //    *data << Vector3(force.TransportPosition);
-        //    *data << int32(TransportID);
-        //    *data << float(Magnitude);
-        //    *data << uint8(Type);
-        //}
-
-        // HasMovementSpline - marks that spline data is present in packet
-        if (data->WriteBit(HasSpline))
-            WorldPackets::Movement::CommonMovement::WriteCreateObjectSplineDataBlock(*unit->movespline, *data);
-    }
-
-    if (HasMovementTransport)
-    {
-        WorldObject const* self = static_cast<WorldObject const*>(this);
-        *data << self->m_movementInfo.transport;
-    }
-
-    if (Stationary)
-    {
-        WorldObject const* self = static_cast<WorldObject const*>(this);
-        *data << float(self->GetStationaryX());
-        *data << float(self->GetStationaryY());
-        *data << float(self->GetStationaryZ());
-        *data << float(self->GetStationaryO());
+      data->WriteBit (0); // write objCreate->move.data.status.moveIndex later on
+      data->WriteBit (HasFall);
+      data->WriteBit (0); // write objCreate->move.data.status.moveTime later on
+      WRITE_GUID_FLAG (GetGUID(), 3);
+      data->WriteBit (HasSpline);
+      WRITE_GUID_FLAG (GetGUID(), 0);
+      data->WriteBit (0); // objCreate->move.data.status.heightChangeFailed);
+      WRITE_GUID_FLAG (GetGUID(), 5);
+      data->WriteBit (0); // write objCreate->move.data.status.moveFlags1 later on
+      WRITE_GUID_FLAG (GetGUID(), 7);
+      WRITE_GUID_FLAG (GetGUID(), 4);
+      data->WriteBit (HasSpline);
+      data->WriteBit (0); // write (objCreate->move.data.status.pitch) later on
+      data->WriteBit (0); // write (objCreate->move.data.status.facing) later on
+      data->WriteBits (0, 22); //objCreate->move.data.status.removeForcesIDs.size);
+      // if ( HasSpline )
+      // {
+      //   data->WriteBit (objCreate->move.data.spline.data.move.m_isSet);
+      //   if ( objCreate->move.data.spline.data.move.m_isSet )
+      //   {
+      //     data->WriteBits (25, objCreate->move.data.spline.data.move.data.flags);
+      //     data->WriteBit (objCreate->move.data.spline.data.move.data.specialTime.m_isSet);
+      //     data->WriteBit (objCreate->move.data.spline.data.move.data.splineFilter.m_isSet);
+      //     data->WriteBits (2, objCreate->move.data.spline.data.move.data.mode);
+      //     if ( objCreate->move.data.spline.data.move.data.splineFilter.m_isSet )
+      //     {
+      //       data->WriteBits (21, objCreate->move.data.spline.data.move.data.splineFilter.data.filterKeys._.size);
+      //       data->WriteBits (2, objCreate->move.data.spline.data.move.data.splineFilter.data.filterFlags);
+      //     }
+      //     data->WriteBit (objCreate->move.data.spline.data.move.data.jumpGravity.m_isSet);
+      //     data->WriteBits (20, objCreate->move.data.spline.data.move.data.points->_.size);
+      //   }
+      // }
+      data->WriteBits (unit->GetExtraUnitMovementFlags(), 16);
+      data->WriteBit (0); // write objCreate->move.data.status.moveFlags0 later on
+      data->WriteBit (0); // write (objCreate->move.data.status.stepUpStartElevation) later on
+      if (HasFall)
+      {
+        data->WriteBit (HasFallDirection);
+      }
+      WRITE_GUID_FLAG (GetGUID(), 1);
+      data->WriteBit (0); //objCreate->move.data.status.remoteTimeValid);
+      data->WriteBits (0, 19); // objCreate->move.data.movementForces->size);
+      WRITE_GUID_FLAG (GetGUID(), 6);
+      data->WriteBits (unit->GetUnitMovementFlags(), 30);
+      WRITE_GUID_FLAG (GetGUID(), 2);
+      data->WriteBit (!unit->m_movementInfo.transport.guid.IsEmpty());
+      if (!unit->m_movementInfo.transport.guid.IsEmpty())
+      {
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 3);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 2);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 6);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 0);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 4);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 7);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 5);
+        data->WriteBit (!!unit->m_movementInfo.transport.prevTime);
+        WRITE_GUID_FLAG (unit->m_movementInfo.transport.guid, 1);
+        data->WriteBit (!!unit->m_movementInfo.transport.vehicleId);
+      }
+      // for (auto& movementForce : objCreate->move.data.movementForces)
+      // {
+      //   data->WriteBits (2, movementForce.type);
+      // }
     }
 
     if (CombatVictim)
-        *data << ToUnit()->GetVictim()->GetGUID();                      // CombatVictim
-
-    if (ServerTime)
     {
-        GameObject const* go = ToGameObject();
-        /** @TODO Use IsTransport() to also handle type 11 (TRANSPORT)
-            Currently grid objects are not updated if there are no nearby players,
-            this causes clients to receive different PathProgress
-            resulting in players seeing the object in a different position
-        */
-        if (go && go->ToTransport())                                    // ServerTime
-            *data << uint32(go->GetGOValue()->Transport.PathProgress);
-        else
-            *data << uint32(getMSTime());
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 5);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 3);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 4);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 6);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 7);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 1);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 0);
+      WRITE_GUID_FLAG (ToUnit()->GetVictim()->GetGUID(), 2);
     }
 
-    if (VehicleCreate)
-    {
-        Unit const* unit = ToUnit();
-        *data << uint32(unit->GetVehicleKit()->GetVehicleInfo()->ID); // RecID
-        *data << float(unit->GetOrientation());                         // InitialRawFacing
-    }
+    data->FlushBits();
+
+    // if ( objCreate->areaTrigger.m_isSet )
+    // {
+    //   data->WriteBit (objCreate->areaTrigger.data.absoluteOrientation);
+    //   data->WriteBit (objCreate->areaTrigger.data.followsTerrain);
+    //   data->WriteBit (objCreate->areaTrigger.data.morphCurveID.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.areaTriggerBox.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.dynamicShape);
+    //   data->WriteBit (objCreate->areaTrigger.data.attached);
+    //   data->WriteBit (objCreate->areaTrigger.data.areaTriggerPolygon.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.facingCurveID.m_isSet);
+    //   if ( objCreate->areaTrigger.data.areaTriggerPolygon.m_isSet )
+    //   {
+    //     data->WriteBits (21, objCreate->areaTrigger.data.areaTriggerPolygon.data.vertices._.size);
+    //     data->WriteBits (21, objCreate->areaTrigger.data.areaTriggerPolygon.data.verticesTarget->_.size);
+    //   }
+    //   data->WriteBit (objCreate->areaTrigger.data.areaTriggerCylinder.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.targetRollPitchYaw.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.areaTriggerSpline.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.moveCurveID.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.scaleCurveID.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.areaTriggerSphere.m_isSet);
+    //   data->WriteBit (objCreate->areaTrigger.data.faceMovementDir);
+    //   if ( objCreate->areaTrigger.data.areaTriggerSpline.m_isSet )
+    //   {
+    //     data->WriteBits (20, objCreate->areaTrigger.data.areaTriggerSpline.data.points->_.size);
+    //   }
+    // }
+
+    // if ( objCreate->scenePendingInstances.m_isSet )
+    // {
+    //   data->WriteBits (22, objCreate->scenePendingInstances.data.sceneInstanceIDs.size);
+    // }
 
     if (AnimKitCreate)
     {
-        WorldObject const* self = static_cast<WorldObject const*>(this);
-        *data << uint16(self->GetAIAnimKitId());                        // AiID
-        *data << uint16(self->GetMovementAnimKitId());                  // MovementID
-        *data << uint16(self->GetMeleeAnimKitId());                     // MeleeID
+      data->WriteBit (0); // write objCreate->animKit.data.movementID later on
+      data->WriteBit (0); // write objCreate->animKit.data.aiID later on
+      data->WriteBit (0); // write objCreate->animKit.data.meleeID later on
     }
 
-    if (Rotation)
-        *data << uint64(ToGameObject()->GetRotation());                 // Rotation
-
-    //if (AreaTrigger)
-    //{
-    //    packet.ReadInt32("ElapsedMs", index);
-
-    //    packet.ReadVector3("RollPitchYaw1", index);
-
-    //    packet.ResetBitReader();
-
-    //    var HasAbsoluteOrientation = packet.ReadBit("HasAbsoluteOrientation", index);
-    //    var HasDynamicShape = packet.ReadBit("HasDynamicShape", index);
-    //    var HasAttached = packet.ReadBit("HasAttached", index);
-    //    var HasFaceMovementDir = packet.ReadBit("HasFaceMovementDir", index);
-    //    var HasFollowsTerrain = packet.ReadBit("HasFollowsTerrain", index);
-    //    var HasTargetRollPitchYaw = packet.ReadBit("HasTargetRollPitchYaw", index);
-    //    var HasScaleCurveID = packet.ReadBit("HasScaleCurveID", index);
-    //    var HasMorphCurveID = packet.ReadBit("HasMorphCurveID", index);
-    //    var HasFacingCurveID = packet.ReadBit("HasFacingCurveID", index);
-    //    var HasMoveCurveID = packet.ReadBit("HasMoveCurveID", index);
-    //    var HasAreaTriggerSphere = packet.ReadBit("HasAreaTriggerSphere", index);
-    //    var HasAreaTriggerBox = packet.ReadBit("HasAreaTriggerBox", index);
-    //    var HasAreaTriggerPolygon = packet.ReadBit("HasAreaTriggerPolygon", index);
-    //    var HasAreaTriggerCylinder = packet.ReadBit("HasAreaTriggerCylinder", index);
-    //    var HasAreaTriggerSpline = packet.ReadBit("HasAreaTriggerSpline", index);
-
-    //    if (HasTargetRollPitchYaw)
-    //        packet.ReadVector3("TargetRollPitchYaw", index);
-
-    //    if (HasScaleCurveID)
-    //        packet.ReadInt32("ScaleCurveID, index");
-
-    //    if (HasMorphCurveID)
-    //        packet.ReadInt32("MorphCurveID", index);
-
-    //    if (HasFacingCurveID)
-    //        packet.ReadInt32("FacingCurveID", index);
-
-    //    if (HasMoveCurveID)
-    //        packet.ReadInt32("MoveCurveID", index);
-
-    //    if (HasAreaTriggerSphere)
-    //    {
-    //        packet.ReadSingle("Radius", index);
-    //        packet.ReadSingle("RadiusTarget", index);
-    //    }
-
-    //    if (HasAreaTriggerBox)
-    //    {
-    //        packet.ReadVector3("Extents", index);
-    //        packet.ReadVector3("ExtentsTarget", index);
-    //    }
-
-    //    if (HasAreaTriggerPolygon)
-    //    {
-    //        var VerticesCount = packet.ReadInt32("VerticesCount", index);
-    //        var VerticesTargetCount = packet.ReadInt32("VerticesTargetCount", index);
-    //        packet.ReadSingle("Height", index);
-    //        packet.ReadSingle("HeightTarget", index);
-
-    //        for (var i = 0; i < VerticesCount; ++i)
-    //            packet.ReadVector2("Vertices", index, i);
-
-    //        for (var i = 0; i < VerticesTargetCount; ++i)
-    //            packet.ReadVector2("VerticesTarget", index, i);
-    //    }
-
-    //    if (HasAreaTriggerCylinder)
-    //    {
-    //        packet.ReadSingle("Radius", index);
-    //        packet.ReadSingle("RadiusTarget", index);
-    //        packet.ReadSingle("Height", index);
-    //        packet.ReadSingle("HeightTarget", index);
-    //        packet.ReadSingle("Float4", index);
-    //        packet.ReadSingle("Float5", index);
-    //    }
-
-    //    if (HasAreaTriggerSpline)
-    //    {
-    //        packet.ReadInt32("TimeToTarget", index);
-    //        packet.ReadInt32("ElapsedTimeForMovement", index);
-    //        var int8 = packet.ReadInt32("VerticesCount", index);
-
-    //        for (var i = 0; i < int8; ++i)
-    //            packet.ReadVector3("Points", index, i);
-    //    }
-    //}
-
-    //if (GameObject)
-    //{
-    //    packet.ReadInt32("WorldEffectID", index);
-
-    //    packet.ResetBitReader();
-
-    //    var bit8 = packet.ReadBit("bit8", index);
-    //    if (bit8)
-    //        packet.ReadInt32("Int1", index);
-    //}
-
+    // \todo scrambled, line 3041
     //if (SceneObjCreate)
     //{
     //    packet.ResetBitReader();
@@ -728,23 +712,366 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
     //    }
     //}
 
-    //if (ScenePendingInstances)
-    //{
-    //    var SceneInstanceIDs = packet.ReadInt32("SceneInstanceIDsCount");
-
-    //    for (var i = 0; i < SceneInstanceIDs; ++i)
-    //        packet.ReadInt32("SceneInstanceIDs", index, i);
-    //}
-
     if (GameObject const* go = ToGameObject())
         for (uint32 i = 0; i < PauseTimesCount; ++i)
             *data << uint32(go->GetGOValue()->Transport.StopFrames->at(i));
+
+    //! \todo sceneobj part 2, line 4628
+
+    if (HasMovementUpdate)
+    {
+      Unit const* unit = ToUnit();
+      bool HasFallDirection = unit->HasUnitMovementFlag(MOVEMENTFLAG_FALLING);
+      bool HasFall = HasFallDirection || unit->m_movementInfo.jump.fallTime != 0;
+      bool HasSpline = false; //unit->IsSplineEnabled();
+
+      if (HasFall)
+      {
+        *data << uint32(unit->m_movementInfo.jump.fallTime);
+        if (HasFallDirection)
+        {
+          *data << float(unit->m_movementInfo.jump.sinAngle);           // Direction
+          *data << float(unit->m_movementInfo.jump.cosAngle);
+          *data << float(unit->m_movementInfo.jump.xyspeed);            // Speed
+        }
+        *data << float(unit->m_movementInfo.jump.zspeed);
+      }
+      if ( !unit->m_movementInfo.transport.guid.IsEmpty() )
+      {
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 6);
+        *data << uint32 (unit->m_movementInfo.transport.time);
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 4);
+        *data << float (unit->m_movementInfo.transport.pos.GetPositionZ());
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 7);
+        if (!!unit->m_movementInfo.transport.prevTime)
+        {
+          *data << uint32 (unit->m_movementInfo.transport.prevTime);
+        }
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 3);
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 0);
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 5);
+        *data << float (unit->m_movementInfo.transport.pos.GetPositionX());
+        *data << float (unit->m_movementInfo.transport.pos.GetOrientation());
+        *data << float (unit->m_movementInfo.transport.pos.GetPositionY());
+        *data << uint8 (unit->m_movementInfo.transport.seat);
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 1);
+        WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 2);
+        if (unit->m_movementInfo.transport.vehicleId)
+        {
+          *data << int32 (unit->m_movementInfo.transport.vehicleId);
+        }
+      }
+      // if ( HasSpline )
+      // {
+      //   if ( objCreate->move.data.spline.data.move.m_isSet )
+      //   {
+      //     *data << objCreate->move.data.spline.data.move.data.face;
+      //     if ( objCreate->move.data.spline.data.move.data.face == 2 )
+      //     {
+      //       dataStore << objCreate->move.data.spline.data.move.data.faceSpot.x;
+      //       dataStore << objCreate->move.data.spline.data.move.data.faceSpot.y;
+      //       dataStore << objCreate->move.data.spline.data.move.data.faceSpot.z;
+      //     }
+      //     for (auto& point : objCreate->move.data.spline.data.move.data.points)
+      //     {
+      //       dataStore << point.z;
+      //       dataStore << point.x;
+      //       dataStore << point.y;
+      //     }
+      //     if ( objCreate->move.data.spline.data.move.data.jumpGravity.m_isSet )
+      //     {
+      //       *data << objCreate->move.data.spline.data.move.data.jumpGravity.data;
+      //     }
+      //     *data << objCreate->move.data.spline.data.move.data.nextDurationModifier;
+      //     *data << objCreate->move.data.spline.data.move.data.elapsed;
+      //     if ( objCreate->move.data.spline.data.move.data.face == 4 )
+      //     {
+      //       dataStore << objCreate->move.data.spline.data.move.data.faceDirection;
+      //     }
+      //     if ( objCreate->move.data.spline.data.move.data.splineFilter.m_isSet )
+      //     {
+      //       for (auto& filterKey : objCreate->move.data.spline.data.move.data.splineFilter.data.filterKeys)
+      //       {
+      //         *data << filterKey.in;
+      //         *data << filterKey.out;
+      //       }
+      //     }
+      //     if ( objCreate->move.data.spline.data.move.data.specialTime.m_isSet )
+      //     {
+      //       *data << objCreate->move.data.spline.data.move.data.specialTime.data;
+      //     }
+      //     *data << objCreate->move.data.spline.data.move.data.duration;
+      //     *data << objCreate->move.data.spline.data.move.data.durationModifier;
+      //   }
+      //   *data << objCreate->move.data.spline.data.destination.z;
+      //   *data << objCreate->move.data.spline.data.ID;
+      //   *data << objCreate->move.data.spline.data.destination.x;
+      //   *data << objCreate->move.data.spline.data.destination.y;
+      // }
+      WRITE_GUID_BYTE (GetGUID(), 7);
+      
+    TC_LOG_ERROR ("network", "BuildMovementUpdate: movement block 2");
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetPositionX()", unit->m_movementInfo.pos.GetPositionX());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetPositionZ()", unit->m_movementInfo.pos.GetPositionZ());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pitch", unit->m_movementInfo.pitch);
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_SWIM)", unit->GetSpeed(MOVE_SWIM));
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_PITCH_RATE)", unit->GetSpeed(MOVE_PITCH_RATE));
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.splineElevation", unit->m_movementInfo.splineElevation);
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_SWIM_BACK)", unit->GetSpeed(MOVE_SWIM_BACK));
+    TC_LOG_DEBUG ("network", "%s:%i", "unit->m_movementInfo.time", unit->m_movementInfo.time);
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_RUN_BACK)", unit->GetSpeed(MOVE_RUN_BACK));
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetOrientation()", unit->m_movementInfo.pos.GetOrientation());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_WALK)", unit->GetSpeed(MOVE_WALK));
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_TURN_RATE)", unit->GetSpeed(MOVE_TURN_RATE));
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_RUN)", unit->GetSpeed(MOVE_RUN));
+    TC_LOG_DEBUG ("network", "%s:%i", "unit->m_movementInfo.time", unit->m_movementInfo.time);
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetPositionY()", unit->m_movementInfo.pos.GetPositionY());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_FLIGHT_BACK)", unit->GetSpeed(MOVE_FLIGHT_BACK));
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_FLIGHT)", unit->GetSpeed(MOVE_FLIGHT));
+
+
+    *data << float (unit->m_movementInfo.pos.GetPositionX());
+      *data << float (unit->m_movementInfo.pos.GetPositionZ());
+      *data << float (unit->m_movementInfo.pitch);
+      *data << float(unit->GetSpeed(MOVE_SWIM));
+      *data << float(unit->GetSpeed(MOVE_PITCH_RATE));
+      *data << float (unit->m_movementInfo.splineElevation);
+      WRITE_GUID_BYTE (GetGUID(), 6);
+      // for (auto& movementForce : objCreate->move.data.movementForces)
+      // {
+      //   *data << movementForce.direction.y;
+      //   *data << movementForce.direction.z;
+      //   *data << movementForce.magnitude;
+      //   *data << movementForce.id;
+      //   *data << movementForce.transportID;
+      //   *data << movementForce.direction.x;
+      // }
+      WRITE_GUID_BYTE (GetGUID(), 2);
+      *data << float(unit->GetSpeed(MOVE_SWIM_BACK));
+      WRITE_GUID_BYTE (GetGUID(), 0);
+      WRITE_GUID_BYTE (GetGUID(), 3);
+      WRITE_GUID_BYTE (GetGUID(), 5);
+      *data << uint32 (unit->m_movementInfo.time);
+      *data << float(unit->GetSpeed(MOVE_RUN_BACK));
+      WRITE_GUID_BYTE (GetGUID(), 1);
+      *data << float (unit->m_movementInfo.pos.GetOrientation());
+      WRITE_GUID_BYTE (GetGUID(), 4);
+      *data << float(unit->GetSpeed(MOVE_WALK));
+      *data << float(unit->GetSpeed(MOVE_TURN_RATE));
+      *data << float(unit->GetSpeed(MOVE_RUN));
+      *data << uint32 (unit->m_movementInfo.time);
+      *data << float (unit->m_movementInfo.pos.GetPositionY());
+      *data << float(unit->GetSpeed(MOVE_FLIGHT_BACK));
+      *data << float(unit->GetSpeed(MOVE_FLIGHT));
+      // for (auto& removeForcesID : objCreate->move.data.status.removeForcesIDs)
+      // {
+      //   *data << removeForcesID;
+      // }
+    }
+
+    // if ( objCreate->areaTrigger.m_isSet )
+    // {
+    //   if ( objCreate->areaTrigger.data.morphCurveID.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.morphCurveID.data;
+    //   }
+    //   *data << objCreate->areaTrigger.data.rollPitchYaw.x;
+    //   if ( objCreate->areaTrigger.data.areaTriggerCylinder.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.areaTriggerCylinder.data.height;
+    //     *data << objCreate->areaTrigger.data.areaTriggerCylinder.data.heightTarget;
+    //     *data << objCreate->areaTrigger.data.areaTriggerCylinder.data.radius;
+    //     *data << objCreate->areaTrigger.data.areaTriggerCylinder.data.radiusTarget;
+    //   }
+    //   *data << objCreate->areaTrigger.data.elapsedMs;
+    //   if ( objCreate->areaTrigger.data.targetRollPitchYaw.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.targetRollPitchYaw.data.x;
+    //     *data << objCreate->areaTrigger.data.targetRollPitchYaw.data.y;
+    //     *data << objCreate->areaTrigger.data.targetRollPitchYaw.data.z;
+    //   }
+    //   if ( objCreate->areaTrigger.data.areaTriggerSpline.m_isSet )
+    //   {
+    //     for (auto& point : objCreate->areaTrigger.data.areaTriggerSpline.data.points)
+    //     {
+    //       *data << point.y;
+    //       *data << point.z;
+    //       *data << point.x;
+    //     }
+    //     *data << objCreate->areaTrigger.data.areaTriggerSpline.data.elapsedTimeForMovement;
+    //     *data << objCreate->areaTrigger.data.areaTriggerSpline.data.timeToTarget;
+    //   }
+    //   if ( objCreate->areaTrigger.data.areaTriggerSphere.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.areaTriggerSphere.data.radius;
+    //     *data << objCreate->areaTrigger.data.areaTriggerSphere.data.radiusTarget;
+    //   }
+    //   if ( objCreate->areaTrigger.data.areaTriggerBox.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.areaTriggerBox.data.extentsTarget.x;
+    //     *data << objCreate->areaTrigger.data.areaTriggerBox.data.extents.y;
+    //     *data << objCreate->areaTrigger.data.areaTriggerBox.data.extents.x;
+    //     *data << objCreate->areaTrigger.data.areaTriggerBox.data.extentsTarget.z;
+    //     *data << objCreate->areaTrigger.data.areaTriggerBox.data.extents.z;
+    //     *data << objCreate->areaTrigger.data.areaTriggerBox.data.extentsTarget.y;
+    //   }
+    //   *data << objCreate->areaTrigger.data.rollPitchYaw.z;
+    //   *data << objCreate->areaTrigger.data.rollPitchYaw.y;
+    //   if ( objCreate->areaTrigger.data.areaTriggerPolygon.m_isSet )
+    //   {
+    //     for (auto& verticesTarget : objCreate->areaTrigger.data.areaTriggerPolygon.data.verticesTarget)
+    //     {
+    //       *data << verticesTarget.y;
+    //       *data << verticesTarget.x;
+    //     }
+    //     for (auto& vertices : objCreate->areaTrigger.data.areaTriggerPolygon.data.vertices)
+    //     {
+    //       *data << vertices.x;
+    //       *data << vertices.y;
+    //     }
+    //     *data << objCreate->areaTrigger.data.areaTriggerPolygon.data.height;
+    //     *data << objCreate->areaTrigger.data.areaTriggerPolygon.data.heightTarget;
+    //   }
+    //   if ( objCreate->areaTrigger.data.facingCurveID.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.facingCurveID.data;
+    //   }
+    //   if ( objCreate->areaTrigger.data.scaleCurveID.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.scaleCurveID.data;
+    //   }
+    //   if ( objCreate->areaTrigger.data.moveCurveID.m_isSet )
+    //   {
+    //     *data << objCreate->areaTrigger.data.moveCurveID.data;
+    //   }
+    // }
+
+    if (CombatVictim)
+    {
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 4);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 7);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 1);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 0);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 3);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 6);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 5);
+      WRITE_GUID_BYTE (ToUnit()->GetVictim()->GetGUID(), 2);
+    }
+
+    if (HasPassenger)
+    {
+      WorldObject const* self = static_cast<WorldObject const*>(this);
+      if (!!self->m_movementInfo.transport.prevTime)
+      {
+        *data << uint32 (self->m_movementInfo.transport.prevTime);
+      }
+      *data << uint8 (self->m_movementInfo.transport.seat);
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 2);
+      *data << float (self->m_movementInfo.transport.pos.GetPositionZ());
+      *data << float (self->m_movementInfo.transport.pos.GetOrientation());
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 6);
+      *data << float (self->m_movementInfo.transport.pos.GetPositionY());
+      if (self->m_movementInfo.transport.vehicleId)
+      {
+        *data << int32 (self->m_movementInfo.transport.vehicleId);
+      }
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 5);
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 7);
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 3);
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 0);
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 1);
+      *data << uint32 (self->m_movementInfo.transport.time);
+      WRITE_GUID_BYTE (self->m_movementInfo.transport.guid, 4);
+      *data << float (self->m_movementInfo.transport.pos.GetPositionX());
+    }
+
+    if (ServerTime)
+    {
+        GameObject const* go = ToGameObject();
+        /** @TODO Use IsTransport() to also handle type 11 (TRANSPORT)
+            Currently grid objects are not updated if there are no nearby players,
+            this causes clients to receive different PathProgress
+            resulting in players seeing the object in a different position
+        */
+        if (go && go->ToTransport())                                    // ServerTime
+            *data << uint32(go->GetGOValue()->Transport.PathProgress);
+        else
+            *data << uint32(getMSTime());
+    }
+
+    if (Stationary)
+    {
+        WorldObject const* self = static_cast<WorldObject const*>(this);
+        *data << float(self->GetStationaryZ());
+        *data << float(self->GetStationaryX());
+        *data << float(self->GetStationaryY());
+        *data << float(self->GetStationaryO());
+    }
+
+    // for (auto& sceneInstanceID : objCreate->scenePendingInstances.data.sceneInstanceIDs)
+    // {
+    //   *data << sceneInstanceID;
+    // }
+
+    if (AnimKitCreate)
+    {
+      WorldObject const* self = static_cast<WorldObject const*>(this);
+      *data << uint16(self->GetMeleeAnimKitId());
+      *data << uint16(self->GetMovementAnimKitId());
+      *data << uint16(self->GetAIAnimKitId());
+    }
+
+    if (VehicleCreate)
+    {
+        Unit const* unit = ToUnit();
+        *data << uint32(unit->GetVehicleKit()->GetVehicleInfo()->ID); // RecID
+        *data << float(unit->GetOrientation());                         // InitialRawFacing
+    }
+
+    // if ( objCreate->gameObject.m_isSet )
+    // {
+    //   *data << objCreate->gameObject.data.worldEffectID;
+    // }
+
+    if (Rotation)
+        *data << uint64(ToGameObject()->GetRotation());                 // Rotation
+
+    // if (HasMovementUpdate)
+    // {
+    //   if ( HasSpline )
+    //   {
+    //     if ( objCreate->move.data.spline.data.move.m_isSet )
+    //     {
+    //       if ( objCreate->move.data.spline.data.move.data.face == 3 )
+    //       {
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 2);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 1);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 5);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 6);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 7);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 4);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 0);
+    //         WRITE_GUID_FLAG (objCreate->move.data.spline.data.move.data.faceGUID, 3);
+
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 1);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 3);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 2);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 0);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 4);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 7);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 5);
+    //         WRITE_GUID_BYTE (objCreate->move.data.spline.data.move.data.faceGUID, 6);
+    //       }
+    //     }
+    //   }
+    // }
 
     data->FlushBits();
 }
 
 void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const
 {
+            TC_LOG_ERROR("network", "UPDATEFIELD?");
     if (!target)
         return;
 
@@ -759,15 +1086,17 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
     for (uint16 index = 0; index < m_valuesCount; ++index)
     {
         if (_fieldNotifyFlags & flags[index] ||
-            ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index]) && (flags[index] & visibleFlag)))
+            ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index])))
         {
             updateMask.SetBit(index);
             fieldBuffer << m_uint32Values[index];
+            TC_LOG_ERROR("network", "UPDATEFIELD %d: %d", index, m_uint32Values[index]);
         }
     }
 
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
+
     data->append(fieldBuffer);
 }
 
@@ -811,6 +1140,7 @@ void Object::BuildDynamicValuesUpdate(uint8 updateType, ByteBuffer* data, Player
 
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
+
     data->append(fieldBuffer);
 }
 
@@ -946,9 +1276,6 @@ uint32 Object::GetDynamicUpdateFieldData(Player const* target, uint32*& flags) c
                 visibleFlag |= UF_FLAG_PARTY_MEMBER;
             break;
         }
-        case TYPEID_GAMEOBJECT:
-            flags = GameObjectDynamicUpdateFieldFlags;
-            break;
         case TYPEID_CONVERSATION:
             flags = ConversationDynamicUpdateFieldFlags;
             break;
@@ -1033,8 +1360,6 @@ bool Object::AddGuidValue(uint16 index, ObjectGuid const& value)
         *((ObjectGuid*)&(m_uint32Values[index])) = value;
         _changesMask.SetBit(index);
         _changesMask.SetBit(index + 1);
-        _changesMask.SetBit(index + 2);
-        _changesMask.SetBit(index + 3);
 
         AddToObjectUpdateIfNeeded();
         return true;
@@ -1051,8 +1376,6 @@ bool Object::RemoveGuidValue(uint16 index, ObjectGuid const& value)
         ((ObjectGuid*)&(m_uint32Values[index]))->Clear();
         _changesMask.SetBit(index);
         _changesMask.SetBit(index + 1);
-        _changesMask.SetBit(index + 2);
-        _changesMask.SetBit(index + 3);
 
         AddToObjectUpdateIfNeeded();
         return true;
@@ -1404,7 +1727,7 @@ bool Object::PrintIndexError(uint32 index, bool set) const
     return false;
 }
 
-void MovementInfo::OutDebug()
+void MovementInfo::OutDebug() const
 {
     TC_LOG_DEBUG("misc", "MOVEMENT INFO");
     TC_LOG_DEBUG("misc", "%s", guid.ToString().c_str());

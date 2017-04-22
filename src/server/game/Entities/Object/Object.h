@@ -348,7 +348,7 @@ struct MovementInfo
         jump.Reset();
     }
 
-    void OutDebug();
+    void OutDebug() const;
 };
 
 template<class T>
