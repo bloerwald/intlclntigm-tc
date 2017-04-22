@@ -43,6 +43,7 @@ WorldPacket const* WorldPackets::Spells::SendKnownSpells::Write()
 {
     _worldPacket.WriteBits (KnownSpells.size(), 22);
     _worldPacket.WriteBit(InitialLogin);
+    _worldPacket.FlushBits();
 
     for (uint32 spellId : KnownSpells)
         _worldPacket << uint32(spellId);
