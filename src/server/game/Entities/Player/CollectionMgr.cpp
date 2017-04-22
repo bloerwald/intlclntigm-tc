@@ -135,7 +135,6 @@ void CollectionMgr::LoadHeirlooms()
     for (auto const& item : _heirlooms)
     {
         _owner->GetPlayer()->AddDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOMS, item.first);
-        _owner->GetPlayer()->AddDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, item.second.flags);
     }
 }
 
@@ -144,7 +143,6 @@ void CollectionMgr::AddHeirloom(uint32 itemId, uint32 flags)
     if (UpdateAccountHeirlooms(itemId, flags))
     {
         _owner->GetPlayer()->AddDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOMS, itemId);
-        _owner->GetPlayer()->AddDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, flags);
     }
 }
 
@@ -183,7 +181,6 @@ void CollectionMgr::UpgradeHeirloom(uint32 itemId, uint32 castItem)
     std::vector<uint32> const& fields = player->GetDynamicValues(PLAYER_DYNAMIC_FIELD_HEIRLOOMS);
     uint8 offset = std::find(fields.begin(), fields.end(), itemId) - fields.begin();
 
-    player->SetDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, offset, flags);
     itr->second.flags = flags;
     itr->second.bonusId = bonusId;
 }
@@ -224,7 +221,6 @@ void CollectionMgr::CheckHeirloomUpgrades(Item* item)
             uint8 offset = std::find(fields.begin(), fields.end(), itr->first) - fields.begin();
 
             player->SetDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOMS, offset, newItemId);
-            player->SetDynamicValue(PLAYER_DYNAMIC_FIELD_HEIRLOOM_FLAGS, offset, 0);
 
             _heirlooms.erase(itr);
             _heirlooms[newItemId] = 0;

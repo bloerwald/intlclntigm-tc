@@ -16135,7 +16135,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     if (target == this)
         visibleFlag |= UF_FLAG_PRIVATE;
     else if (GetTypeId() == TYPEID_PLAYER)
-        valCount = PLAYER_FIELD_END_NOT_SELF;
+        valCount = PLAYER_END_NOT_SELF;
 
     updateMask.SetCount(valCount);
 
