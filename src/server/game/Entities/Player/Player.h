@@ -1962,9 +1962,6 @@ class Player : public Unit, public GridObject<Player>
         void SetLastRuneGraceTimer(uint8 index, uint32 timer) { m_lastRuneGraceTimers[index] = timer; }
         void UpdateAllRunesRegen();
 
-        ObjectGuid const& GetLootGUID() const { return GetGuidValue(PLAYER_LOOT_TARGET_GUID); }
-        void SetLootGUID(ObjectGuid const& guid) { SetGuidValue(PLAYER_LOOT_TARGET_GUID, guid); }
-
         void RemovedInsignia(Player* looterPlr);
 
         WorldSession* GetSession() const { return m_session; }

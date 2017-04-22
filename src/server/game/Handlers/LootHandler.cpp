@@ -34,7 +34,7 @@
 void WorldSession::HandleAutostoreLootItemOpcode(WorldPackets::Loot::LootItem& packet)
 {
     Player* player = GetPlayer();
-    ObjectGuid lguid = player->GetLootGUID();
+    ObjectGuid lguid = player->GetGUID();
 
     /// @todo Implement looting by LootObject guid
     for (WorldPackets::Loot::LootRequest const& req : packet.Loot)
@@ -103,7 +103,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPackets::Loot::LootItem& p
 void WorldSession::HandleLootMoneyOpcode(WorldPackets::Loot::LootMoney& /*packet*/)
 {
     Player* player = GetPlayer();
-    ObjectGuid guid = player->GetLootGUID();
+    ObjectGuid guid = player->GetGUID();
     if (!guid)
         return;
 
@@ -241,7 +241,7 @@ void WorldSession::HandleLootReleaseOpcode(WorldPackets::Loot::LootRelease& pack
 {
     // cheaters can modify lguid to prevent correct apply loot release code and re-loot
     // use internal stored guid
-    ObjectGuid lguid = GetPlayer()->GetLootGUID();
+    ObjectGuid lguid = GetPlayer()->GetGUID();
     if (!lguid.IsEmpty())
         if (lguid == packet.Unit)
             DoLootRelease(lguid);
@@ -252,7 +252,6 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
     Player  *player = GetPlayer();
     Loot    *loot;
 
-    player->SetLootGUID(ObjectGuid::Empty);
     player->SendLootRelease(lguid);
 
     player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOOTING);
@@ -407,7 +406,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
 
     TC_LOG_DEBUG("network", "WorldSession::HandleLootMasterGiveOpcode (CMSG_LOOT_MASTER_GIVE, 0x02A3) Target = [%s].", target->GetName().c_str());
 
-    if (_player->GetLootGUID() != lootguid)
+    if (_player->GetGUID() != lootguid)
     {
         _player->SendLootError(lootguid, LOOT_ERROR_DIDNT_KILL);
         return;
@@ -422,7 +421,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
 
     Loot* loot = NULL;
 
-    if (GetPlayer()->GetLootGUID().IsCreatureOrVehicle())
+    if (GetPlayer()->GetGUID().IsCreatureOrVehicle())
     {
         Creature* creature = GetPlayer()->GetMap()->GetCreature(lootguid);
         if (!creature)
@@ -430,7 +429,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
 
         loot = &creature->loot;
     }
-    else if (GetPlayer()->GetLootGUID().IsGameObject())
+    else if (GetPlayer()->GetGUID().IsGameObject())
     {
         GameObject* pGO = GetPlayer()->GetMap()->GetGameObject(lootguid);
         if (!pGO)

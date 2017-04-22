@@ -246,7 +246,7 @@ void WorldSession::HandleWhoOpcode(WorldPackets::Who::WhoRequestPkt& whoRequest)
 
 void WorldSession::HandleLogoutRequestOpcode(WorldPackets::Character::LogoutRequest& /*logoutRequest*/)
 {
-    ObjectGuid lguid = GetPlayer()->GetLootGUID();
+    ObjectGuid lguid = GetPlayer()->GetGUID();
     if (!lguid.IsEmpty())
         DoLootRelease(lguid);
 

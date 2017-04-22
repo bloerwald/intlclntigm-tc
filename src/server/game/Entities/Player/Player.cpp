@@ -7961,7 +7961,7 @@ void Player::SendLootRelease(ObjectGuid guid)
 
 void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 {
-    ObjectGuid currentLootGuid = GetLootGUID();
+    ObjectGuid currentLootGuid = GetGUID();
     if (!currentLootGuid.IsEmpty())
         m_session->DoLootRelease(currentLootGuid);
 
@@ -8290,8 +8290,6 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             }
         }
 
-        SetLootGUID(guid);
-
         WorldPackets::Loot::LootResponse packet;
         packet.LootObj = guid;
         packet.Owner = loot->GetGUID();
@@ -8305,7 +8303,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
         loot->AddLooter(GetGUID());
     }
     else
-        SendLootError(GetLootGUID(), LOOT_ERROR_DIDNT_KILL);
+        SendLootError(GetGUID(), LOOT_ERROR_DIDNT_KILL);
 
     if (loot_type == LOOT_CORPSE && !guid.IsItem())
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_LOOTING);
@@ -12306,7 +12304,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
 
     // if player is moving bags and is looting an item inside this bag
     // release the loot
-    if (!GetLootGUID().IsEmpty())
+    if (!GetGUID().IsEmpty())
     {
         bool released = false;
         if (IsBagPos(src))
@@ -12318,7 +12316,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 {
                     if (bagItem->m_lootGenerated)
                     {
-                        m_session->DoLootRelease(GetLootGUID());
+                        m_session->DoLootRelease(GetGUID());
                         released = true;                    // so we don't need to look at dstBag
                         break;
                     }
@@ -12335,7 +12333,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 {
                     if (bagItem->m_lootGenerated)
                     {
-                        m_session->DoLootRelease(GetLootGUID());
+                        m_session->DoLootRelease(GetGUID());
                         released = true;                    // not realy needed here
                         break;
                     }
@@ -24163,14 +24161,14 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
 
     if (!item->AllowedForPlayer(this))
     {
-        SendLootRelease(GetLootGUID());
+        SendLootRelease(GetGUID());
         return;
     }
 
     // questitems use the blocked field for other purposes
     if (!qitem && item->is_blocked)
     {
-        SendLootRelease(GetLootGUID());
+        SendLootRelease(GetGUID());
         return;
     }
 
@@ -24185,7 +24183,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
             qitem->is_looted = true;
             //freeforall is 1 if everyone's supposed to get the quest item.
             if (item->freeforall || loot->GetPlayerQuestItems().size() == 1)
-                SendNotifyLootItemRemoved(GetLootGUID(), loot->GetGUID(), lootSlot);
+                SendNotifyLootItemRemoved(GetGUID(), loot->GetGUID(), lootSlot);
             else
                 loot->NotifyQuestItemRemoved(qitem->index);
         }
@@ -24195,7 +24193,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
             {
                 //freeforall case, notify only one player of the removal
                 ffaitem->is_looted = true;
-                SendNotifyLootItemRemoved(GetLootGUID(), loot->GetGUID(), lootSlot);
+                SendNotifyLootItemRemoved(GetGUID(), loot->GetGUID(), lootSlot);
             }
             else
             {

@@ -512,7 +512,7 @@ void WorldSession::LogoutPlayer(bool save)
 
     if (_player)
     {
-        ObjectGuid lguid = _player->GetLootGUID();
+        ObjectGuid lguid = _player->GetGUID();
         if (!lguid.IsEmpty())
             DoLootRelease(lguid);
 
