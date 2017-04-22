@@ -256,19 +256,6 @@ int main(int argc, char** argv)
             case Constants::BinaryTypes::Mach64:
                 std::cout << "Mac client...\n";
 
-                boost::algorithm::replace_all (renamed_binary_path, ".app", " Patched.app");
-                Helper::CopyDir(boost::filesystem::path(binary_path).parent_path()/*MacOS*/.parent_path()/*Contents*/.parent_path()
-                        , boost::filesystem::path(renamed_binary_path).parent_path()/*MacOS*/.parent_path()/*Contents*/.parent_path()
-                        );
-
-                do_patches<Patches::Mac::x64, Patterns::Mac::x64>
-                    (&patcher, renamed_binary_path, patchVersionPath, wowBuild);
-
-                {
-                    namespace fs = boost::filesystem;
-                    fs::permissions(renamed_binary_path, fs::add_perms | fs::others_exe | fs::group_exe | fs::owner_exe);
-                }
-
                 do_module<Patches::Mac::x64, Patterns::Mac::x64>
                     ( "97eeb2e28e9e56ed6a22d09f44e2ff43c93315e006bbad43bafc0defaa6f50ae.auth"
                     , "/Users/Shared/Blizzard/Battle.net/Cache/"
