@@ -1117,8 +1117,6 @@ void Battlenet::Session::UpdateRealms(std::vector<Realm const*>& realms, std::ve
 Battlenet::WoWRealm::ListUpdate* Battlenet::Session::BuildListUpdate(Realm const* realm) const
 {
     uint32 flag = realm->Flags;
-    if (realm->Build != _build)
-        flag |= REALM_FLAG_VERSION_MISMATCH;
 
     WoWRealm::ListUpdate* listUpdate = new WoWRealm::ListUpdate();
     listUpdate->State.Update.Category = realm->Timezone;
