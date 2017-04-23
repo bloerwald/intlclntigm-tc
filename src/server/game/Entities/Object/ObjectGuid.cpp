@@ -115,14 +115,30 @@ std::vector<uint8> ObjectGuid::GetRawValue() const
 
 void ObjectGuid::SetRawValue(std::vector<uint8> const& guid)
 {
-    ASSERT(guid.size() == sizeof(*this));
+    //ASSERT(guid.size() == sizeof(*this));
     memcpy(this, guid.data(), sizeof(*this));
 }
 
 void PackedGuid::Set(ObjectGuid const& guid)
 {
     _packedGuid.clear();
-    _packedGuid << guid;
+        _packedGuid << uint8 ( !!guid[0] << 0
+                 | !!guid[1] << 1
+                 | !!guid[2] << 2
+                 | !!guid[3] << 3
+                 | !!guid[4] << 4
+                 | !!guid[5] << 5
+                 | !!guid[6] << 6
+                 | !!guid[7] << 7
+                 );
+    if (guid[0]) _packedGuid << guid[0];
+    if (guid[1]) _packedGuid << guid[1];
+    if (guid[2]) _packedGuid << guid[2];
+    if (guid[3]) _packedGuid << guid[3];
+    if (guid[4]) _packedGuid << guid[4];
+    if (guid[5]) _packedGuid << guid[5];
+    if (guid[6]) _packedGuid << guid[6];
+    if (guid[7]) _packedGuid << guid[7];
 }
 
 ByteBuffer& operator<<(ByteBuffer& buf, ObjectGuid const& guid)
