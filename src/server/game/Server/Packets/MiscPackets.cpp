@@ -118,8 +118,8 @@ WorldPacket const* WorldPackets::Misc::TimeSyncRequest::Write()
 
 void WorldPackets::Misc::TimeSyncResponse::Read()
 {
-    _worldPacket >> SequenceIndex;
     _worldPacket >> ClientTime;
+    _worldPacket >> SequenceIndex;
 }
 
 WorldPacket const* WorldPackets::Misc::UITime::Write()
@@ -492,33 +492,7 @@ void WorldPackets::Misc::SaveCUFProfiles::Read()
 
 WorldPacket const* WorldPackets::Misc::LoadCUFProfiles::Write()
 {
-    _worldPacket << uint32(CUFProfiles.size());
-
-    for (CUFProfile const* cufProfile : CUFProfiles)
-    {
-        _worldPacket.WriteBits(cufProfile->ProfileName.size(), 7);
-
-        // Bool Options
-        for (uint8 option = 0; option < CUF_BOOL_OPTIONS_COUNT; option++)
-            _worldPacket.WriteBit(cufProfile->BoolOptions[option]);
-
-        // Other Options
-        _worldPacket << cufProfile->FrameHeight;
-        _worldPacket << cufProfile->FrameWidth;
-
-        _worldPacket << cufProfile->SortBy;
-        _worldPacket << cufProfile->HealthText;
-
-        _worldPacket << cufProfile->TopPoint;
-        _worldPacket << cufProfile->BottomPoint;
-        _worldPacket << cufProfile->LeftPoint;
-
-        _worldPacket << cufProfile->TopOffset;
-        _worldPacket << cufProfile->BottomOffset;
-        _worldPacket << cufProfile->LeftOffset;
-
-        _worldPacket.WriteString(cufProfile->ProfileName);
-    }
+    _worldPacket.WriteBits(0, 19);
 
     return &_worldPacket;
 }

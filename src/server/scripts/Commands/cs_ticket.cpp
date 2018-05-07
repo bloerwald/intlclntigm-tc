@@ -186,7 +186,7 @@ bool ticket_commandscript::HandleTicketCloseByIdCommand(ChatHandler* handler, ch
     if (player)
         closedByGuid = player->GetGUID();
     else
-        closedByGuid.SetRawValue(0, uint64(-1));
+        ;//closedByGuid.SetRawValue(0, uint64(-1));
 
     sSupportMgr->CloseTicket<T>(ticket->GetId(), closedByGuid);
 

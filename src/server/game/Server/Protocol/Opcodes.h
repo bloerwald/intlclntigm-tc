@@ -1990,7 +1990,6 @@ enum OpcodeClient : uint32
     CMSG_GET_CHALLENGE_MODE_REWARDS                   , //= 0xffff,
     CMSG_GET_PVP_OPTIONS_ENABLED                      , //= 0xffff,
     CMSG_GET_REMAINING_GAME_TIME                      , //= 0xffff,
-    CMSG_GET_UNDELETE_CHARACTER_COOLDOWN_STATUS       = USER_CLIENT_GET_UNDELETE_CHARACTER_COOLDOWN_STATUS, // FIXED
     CMSG_GM_TICKET_ACKNOWLEDGE_SURVEY                 , //= 0xffff,
     CMSG_GM_TICKET_GET_CASE_STATUS                    , //= 0xffff,
     CMSG_GM_TICKET_GET_SYSTEM_STATUS                  , //= 0xffff,
@@ -2055,7 +2054,6 @@ enum OpcodeClient : uint32
     CMSG_MOVE_FORCE_UNROOT_ACK                        , //= 0xffff,
     CMSG_MOVE_FORCE_WALK_SPEED_CHANGE_ACK             , //= 0xffff,
     CMSG_MOVE_GRAVITY_DISABLE_ACK                     , //= 0xffff,
-    CMSG_MOVE_HEARTBEAT                               , //= 0xffff,
     CMSG_MOVE_SET_COLLISION_HEIGHT_ACK                , //= 0xffff,
     CMSG_MOVE_SET_VEHICLE_REC_ID_ACK                  , //= 0xffff,
     CMSG_MOVE_START_PITCH_UP                          , //= 0xffff,
@@ -2172,7 +2170,6 @@ enum OpcodeClient : uint32
     CMSG_TAXI_REQUEST_EARLY_LANDING                   , //= 0xffff,
     CMSG_TELEPORT_TO_UNIT                             , //= 0xffff,
     CMSG_TIME_ADJUSTMENT_RESPONSE                     , //= 0xffff,
-    CMSG_TIME_SYNC_RESPONSE                           , //= 0xffff,
     CMSG_TIME_SYNC_RESPONSE_DROPPED                   , //= 0xffff,
     CMSG_TIME_SYNC_RESPONSE_FAILED                    , //= 0xffff,
     CMSG_TOY_SET_FAVORITE                             , //= 0xffff,
@@ -2199,6 +2196,9 @@ enum OpcodeClient : uint32
     CMSG_WORLD_PORT_RESPONSE                          , //= 0xffff,
     CMSG_WORLD_TELEPORT                               , //= 0xffff,
     CMSG_WRAP_ITEM                                    , //= 0xffff,
+    CMSG_GET_UNDELETE_CHARACTER_COOLDOWN_STATUS       = USER_CLIENT_GET_UNDELETE_CHARACTER_COOLDOWN_STATUS, // FIXED
+    CMSG_MOVE_HEARTBEAT                               = 0x06CA,
+    CMSG_TIME_SYNC_RESPONSE                           = CMSG_TIME_SYNC_RESP,
 };
 
 enum OpcodeServer : uint32

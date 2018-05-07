@@ -2507,6 +2507,7 @@ Unit* Creature::SelectNearestHostileUnitInAggroRange(bool useLOS) const
 
 void Creature::UpdateMovementFlags()
 {
+        SetCanFly(true);
     // Do not update movement flags if creature is controlled by a player (charm/vehicle)
     if (m_movedPlayer)
         return;

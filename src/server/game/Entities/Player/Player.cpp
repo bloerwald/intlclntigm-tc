@@ -16632,6 +16632,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SQLQueryHolder *holder)
     SetCreatorGUID(ObjectGuid::Empty);
 
     RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FORCE_MOVEMENT);
+    SetCanFly(true);
 
     // reset some aura modifiers before aura apply
     SetUInt32Value(PLAYER_TRACK_CREATURES, 0);
@@ -22329,6 +22330,7 @@ void Player::LearnCustomSpells()
 
 void Player::LearnDefaultSkills()
 {
+    return;
     // learn default race/class skills
     PlayerInfo const* info = sObjectMgr->GetPlayerInfo(getRace(), getClass());
     for (PlayerCreateInfoSkills::const_iterator itr = info->skills.begin(); itr != info->skills.end(); ++itr)
@@ -25863,6 +25865,7 @@ bool Player::CanUseMastery() const
 
 void Player::ValidateMovementInfo(MovementInfo* mi)
 {
+    return;
     //! Anti-cheat checks. Please keep them in seperate if () blocks to maintain a clear overview.
     //! Might be subject to latency, so just remove improper flags.
     #ifdef TRINITY_DEBUG

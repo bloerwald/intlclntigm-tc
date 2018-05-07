@@ -165,9 +165,9 @@ ByteBuffer& operator<<(ByteBuffer& buf, ObjectGuid const& guid)
 ByteBuffer& operator>>(ByteBuffer& buf, ObjectGuid& guid)
 {
     uint8 lowMask, highMask;
-    buf >> lowMask >> highMask;
-    buf.ReadPackedUInt64(lowMask, guid._low);
-    buf.ReadPackedUInt64(highMask, guid._high);
+    // buf >> lowMask >> highMask;
+    // buf.ReadPackedUInt64(lowMask, guid._low);
+    // buf.ReadPackedUInt64(highMask, guid._high);
     return buf;
 }
 

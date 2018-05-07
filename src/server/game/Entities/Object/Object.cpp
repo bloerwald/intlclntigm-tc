@@ -752,7 +752,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
         WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 5);
         *data << float (unit->m_movementInfo.transport.pos.GetPositionX());
         *data << float (unit->m_movementInfo.transport.pos.GetOrientation());
-        *data << float (unit->m_movementInfo.transport.pos.GetPositionY());
+        *data << float (unit->m_movementInfo.transport.pos.GetPositionY()) + 100;
         *data << uint8 (unit->m_movementInfo.transport.seat);
         WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 1);
         WRITE_GUID_BYTE (unit->m_movementInfo.transport.guid, 2);
@@ -811,8 +811,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
       WRITE_GUID_BYTE (GetGUID(), 7);
       
     TC_LOG_ERROR ("network", "BuildMovementUpdate: movement block 2");
-    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetPositionX()", unit->m_movementInfo.pos.GetPositionX());
-    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetPositionZ()", unit->m_movementInfo.pos.GetPositionZ());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetPositionX()", unit->GetPositionX());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetPositionZ()", unit->GetPositionZ());
     TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pitch", unit->m_movementInfo.pitch);
     TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_SWIM)", unit->GetSpeed(MOVE_SWIM));
     TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_PITCH_RATE)", unit->GetSpeed(MOVE_PITCH_RATE));
@@ -825,13 +825,13 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
     TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_TURN_RATE)", unit->GetSpeed(MOVE_TURN_RATE));
     TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_RUN)", unit->GetSpeed(MOVE_RUN));
     TC_LOG_DEBUG ("network", "%s:%i", "unit->m_movementInfo.time", unit->m_movementInfo.time);
-    TC_LOG_DEBUG ("network", "%s:%f", "unit->m_movementInfo.pos.GetPositionY()", unit->m_movementInfo.pos.GetPositionY());
+    TC_LOG_DEBUG ("network", "%s:%f", "unit->GetPositionY()", unit->GetPositionY());
     TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_FLIGHT_BACK)", unit->GetSpeed(MOVE_FLIGHT_BACK));
     TC_LOG_DEBUG ("network", "%s:%f", "unit->GetSpeed(MOVE_FLIGHT)", unit->GetSpeed(MOVE_FLIGHT));
 
 
-    *data << float (unit->m_movementInfo.pos.GetPositionX());
-      *data << float (unit->m_movementInfo.pos.GetPositionZ());
+    *data << float (unit->GetPositionX());
+      *data << float (unit->GetPositionZ());
       *data << float (unit->m_movementInfo.pitch);
       *data << float(unit->GetSpeed(MOVE_SWIM));
       *data << float(unit->GetSpeed(MOVE_PITCH_RATE));
@@ -860,7 +860,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint32 flags) const
       *data << float(unit->GetSpeed(MOVE_TURN_RATE));
       *data << float(unit->GetSpeed(MOVE_RUN));
       *data << uint32 (unit->m_movementInfo.time);
-      *data << float (unit->m_movementInfo.pos.GetPositionY());
+      *data << float (unit->GetPositionY());
       *data << float(unit->GetSpeed(MOVE_FLIGHT_BACK));
       *data << float(unit->GetSpeed(MOVE_FLIGHT));
       // for (auto& removeForcesID : objCreate->move.data.status.removeForcesIDs)

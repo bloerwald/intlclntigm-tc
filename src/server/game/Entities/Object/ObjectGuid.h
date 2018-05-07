@@ -190,7 +190,7 @@ class ObjectGuid
         static ObjectGuid const Empty;
         static ObjectGuid const TradeItem;
 
-        typedef uint64 LowType;
+        typedef uint32 LowType;
 
         template<HighGuid type>
         static typename std::enable_if<ObjectGuidTraits<type>::Global, ObjectGuid>::type Create(LowType counter) { return Global(type, counter); }
@@ -205,31 +205,31 @@ class ObjectGuid
 
         std::vector<uint8> GetRawValue() const;
         void SetRawValue(std::vector<uint8> const& guid);
-        void SetRawValue(uint64 high, uint64 low) { _high = high; _low = low; }
+        void SetRawValue(uint32 high, uint32 low) { _high = high; _low = low; }
         void Clear() { _high = 0; _low = 0; }
 
-        HighGuid GetHigh() const { return HighGuid((_high >> 58) & 0x3F); }
-        uint32 GetRealmId() const { return uint32((_high >> 42) & 0x1FFF); }
-        uint32 GetMapId() const { return uint32((_high >> 29) & 0x1FFF); }
+        HighGuid GetHigh() const { return HighGuid((_high) & 0x3F); }
+        // uint32 GetRealmId() const { return uint32((_high >> 42) & 0x1FFF); }
+        // uint32 GetMapId() const { return uint32((_high >> 29) & 0x1FFF); }
         uint32 GetEntry() const { return uint32((_high >> 6) & 0x7FFFFF); }
-        LowType GetCounter() const { return _low & UI64LIT(0x000000FFFFFFFFFF); }
+        LowType GetCounter() const { return _low; }
 
         static LowType GetMaxCounter(HighGuid /*high*/)
         {
-            return UI64LIT(0xFFFFFFFFFF);
+            return 0xFFFFFFFF;
         }
 
         LowType GetMaxCounter() const { return GetMaxCounter(GetHigh()); }
 
         uint8& operator[](uint32 index)
         {
-            ASSERT(index < sizeof(uint64) * 2);
+            ASSERT(index < sizeof(uint32) * 2);
             return ((uint8*)&_low)[index];
         }
 
         uint8 const& operator[](uint32 index) const
         {
-            ASSERT(index < sizeof(uint64) * 2);
+            ASSERT(index < sizeof(uint32) * 2);
             return ((uint8 const*)&_low)[index];
         }
 
@@ -313,11 +313,11 @@ class ObjectGuid
         static ObjectGuid RealmSpecific(HighGuid type, LowType counter);
         static ObjectGuid MapSpecific(HighGuid type, uint8 subType, uint16 mapId, uint32 serverId, uint32 entry, LowType counter);
 
-        ObjectGuid(uint64 high, uint64 low) : _low(low), _high(high) { }
+        ObjectGuid(uint32 high, uint32 low) : _low(low), _high(high) { }
         explicit ObjectGuid(uint32 const&) = delete;                 // no implementation, used to catch wrong type assignment
 
-        uint64 _low;
-        uint64 _high;
+        uint32 _low;
+        uint32 _high;
 };
 
 #pragma pack(pop)

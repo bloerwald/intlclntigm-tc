@@ -299,6 +299,7 @@ void Player::UpdateMaxPower(Powers power)
 
 void Player::UpdateAttackPowerAndDamage(bool ranged)
 {
+    return;
     float val2 = 0.0f;
     float level = float(getLevel());
 
@@ -616,6 +617,7 @@ void Player::UpdateParryPercentage()
 
 void Player::UpdateDodgePercentage()
 {
+    return;
     const float dodge_cap[MAX_CLASSES] =
     {
         65.631440f,     // Warrior

@@ -78,57 +78,174 @@ ByteBuffer& operator<<(ByteBuffer& data, MovementInfo& movementInfo)
 
     return data;
 }
+#include "Log.h"
 
 ByteBuffer& operator>>(ByteBuffer& data, MovementInfo& movementInfo)
 {
-    bool hasSpline = false;
+  memset (&movementInfo, 0, sizeof (MovementInfo));
 
-    data >> movementInfo.guid;
-    data >> movementInfo.time;
-    data >> movementInfo.pos.PositionXYZOStream();
-    data >> movementInfo.pitch;
-    data >> movementInfo.splineElevation;
+    #define GUID_FLAG(_x, _guid) _guid[_x] = data.ReadBit();
+    #define GUID_FIELD(_x, _guid) if (_guid[_x]) { uint8 x; data >> x; _guid[_x] ^ x; }
 
-    uint32 removeMovementForcesCount;
-    data >> removeMovementForcesCount;
+    data >> movementInfo.pos.m_positionY;
+    data >> movementInfo.pos.m_positionZ;
+    data >> movementInfo.pos.m_positionX;
 
-    uint32 int168;
-    data >> int168;
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
 
+    data.ReadBit(); // RemoteTimeValid
+    bool hasSpline = data.ReadBit();
+    GUID_FLAG (3, movementInfo.guid);
+    bool hasTransport = data.ReadBit();
+    GUID_FLAG (4, movementInfo.guid);
+    data.ReadBit(); // HeightChangeFailed
+    movementInfo.flags2 = data.ReadBit() ^ 1;
+    bool hasFall = data.ReadBit();
+
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+
+    GUID_FLAG (0, movementInfo.guid);
+    movementInfo.time = data.ReadBit() ^ 1;
+    GUID_FLAG (2, movementInfo.guid);
+    movementInfo.pitch = data.ReadBit() ? 0.0f : 1.0f;
+    movementInfo.splineElevation = data.ReadBit() ? 0.0f : 1.0f;
+    GUID_FLAG (7, movementInfo.guid);
+    uint32_t moveIndex = data.ReadBit() ^ 1;
+    GUID_FLAG (1, movementInfo.guid);
+
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+
+    GUID_FLAG (6, movementInfo.guid);
+    GUID_FLAG (5, movementInfo.guid);
+    //uint32 removeMovementForcesCount = data.ReadBits(22);
+    float pos_orientation = data.ReadBit() ? 0.0f : 1.0f;
+    movementInfo.flags = data.ReadBit() ^ 1;
+    if (movementInfo.flags)
+    {
+      movementInfo.flags = data.ReadBits(30);
+    }
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
+    if (hasTransport)
+    {
+      GUID_FLAG (6, movementInfo.transport.guid);
+      movementInfo.transport.vehicleId = data.ReadBit();
+      GUID_FLAG (3, movementInfo.transport.guid);
+      GUID_FLAG (5, movementInfo.transport.guid);
+      movementInfo.transport.prevTime = data.ReadBit();
+      GUID_FLAG (0, movementInfo.transport.guid);
+      GUID_FLAG (2, movementInfo.transport.guid);
+      GUID_FLAG (4, movementInfo.transport.guid);
+      GUID_FLAG (7, movementInfo.transport.guid);
+      GUID_FLAG (1, movementInfo.transport.guid);
+    }
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
+    if (movementInfo.flags2)
+    {
+      movementInfo.flags2 = data.ReadBits(15);
+    }
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
+
+    bool hasFallDirection = hasFall ? data.ReadBit() : false;
+
+    data.FlushBits();
+
+    GUID_FIELD (4, movementInfo.guid);
+    GUID_FIELD (5, movementInfo.guid);
+    GUID_FIELD (1, movementInfo.guid);
+    GUID_FIELD (6, movementInfo.guid);
+    GUID_FIELD (3, movementInfo.guid);
+    GUID_FIELD (2, movementInfo.guid);
+    GUID_FIELD (0, movementInfo.guid);
     for (uint32 i = 0; i < removeMovementForcesCount; ++i)
     {
-        ObjectGuid guid;
-        data >> guid;
+        uint32_t x;
+        data >> x;
     }
+    GUID_FIELD (7, movementInfo.guid);
 
-    movementInfo.flags = data.ReadBits(30);
-    movementInfo.flags2 = data.ReadBits(16);
-
-    bool hasTransport = data.ReadBit();
-    bool hasFall = data.ReadBit();
-    hasSpline = data.ReadBit(); // todo 6.x read this infos
-
-    data.ReadBit(); // HeightChangeFailed
-    data.ReadBit(); // RemoteTimeValid
-
-    if (hasTransport)
-        data >> movementInfo.transport;
-
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
     if (hasFall)
     {
-        data >> movementInfo.jump.fallTime;
-        data >> movementInfo.jump.zspeed;
-
-        // ResetBitReader
-
-        bool hasFallDirection = data.ReadBit();
-        if (hasFallDirection)
-        {
-            data >> movementInfo.jump.sinAngle;
-            data >> movementInfo.jump.cosAngle;
-            data >> movementInfo.jump.xyspeed;
-        }
+      if (hasFallDirection)
+      {
+        data >> movementInfo.jump.xyspeed;
+        data >> movementInfo.jump.cosAngle;
+        data >> movementInfo.jump.sinAngle;
+      }
+      data >> movementInfo.jump.zspeed;
+      data >> movementInfo.jump.fallTime;
     }
+
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
+    if (hasTransport)
+    {
+      if (movementInfo.transport.prevTime)
+      {
+        data >> movementInfo.transport.prevTime;
+      }
+      GUID_FLAG (2, movementInfo.transport.guid);
+      GUID_FLAG (4, movementInfo.transport.guid);
+      if (movementInfo.transport.vehicleId)
+      {
+        data >> movementInfo.transport.vehicleId;
+      }
+      GUID_FLAG (3, movementInfo.transport.guid);
+      GUID_FLAG (6, movementInfo.transport.guid);
+      GUID_FLAG (1, movementInfo.transport.guid);
+      GUID_FLAG (7, movementInfo.transport.guid);
+      data >> movementInfo.transport.pos.m_positionY;
+      GUID_FLAG (0, movementInfo.transport.guid);
+      GUID_FLAG (5, movementInfo.transport.guid);
+      data >> movementInfo.transport.pos.m_positionX;
+      data >> movementInfo.transport.seat;
+      data >> movementInfo.transport.time;
+      float tmp;
+      data >> tmp;
+      movementInfo.transport.pos.SetOrientation(tmp);
+      data >> movementInfo.transport.pos.m_positionZ;
+    }
+
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
+    if (moveIndex)
+    {
+      data >> moveIndex;
+    }
+    if (movementInfo.splineElevation != 0.0f)
+    {
+      data >> movementInfo.splineElevation;
+    }
+    if (movementInfo.time)
+    {
+      data >> movementInfo.time;
+    }
+    if (pos_orientation != 0.0f)
+    {
+      data >> pos_orientation;
+      movementInfo.pos.SetOrientation(pos_orientation);
+    }
+    if (movementInfo.pitch != 0.0)
+    {
+      data >> movementInfo.pitch;
+    }
+
+    TC_LOG_ERROR("misc", "\n\n%d", __LINE__);
+    movementInfo.OutDebug();
+    
 
     return data;
 }
